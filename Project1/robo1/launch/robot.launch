@@ -1,0 +1,22 @@
+<launch>
+
+<param name="initialPoseX" value="0.05" />
+<param name="initialPoseY" value="0.10" />
+<param name="initialPoseTheta" value="0.00" />
+
+<param name="robotDimensionR" value="0.07" />
+<param name="robotDimensionL" value="0.200" />
+<param name="robotDimensionW" value="0.173" />
+<param name="gearRatio" value="5.0" />
+<param name="cpr" value="37.0" />
+
+<node pkg="robo1" type="publisherOdometry" name="publisherOdometry" />
+<node pkg="robo1" type="publisherVelocity" name="publisherVelocity" />
+<node pkg="robo1" type="publisherRPM" name="publisherRPM"/>
+<node pkg="robo1" type="RobotCalibrator" name="RobotCalibrator"/>
+
+<node pkg="tf2_ros" type="static_transform_publisher" name="set_odom_to_origin" args="0 0 0 0 0 0 world odom" />
+<node type="rviz" name="rviz" pkg="rviz" args="-d $(find robo1)/rviz/robotvisual.rviz"></node>
+<node pkg="rqt_reconfigure" type="rqt_reconfigure" name="rqt_reconfigure"></node>
+
+</launch>

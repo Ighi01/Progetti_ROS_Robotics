@@ -1,0 +1,84 @@
+Team:
+Alessandro Romito 			10661916	
+Gioele Crespi				10680212
+Ignazio Neto dell'Acqua			10704869
+
+- description of the files inside the archive
+	-> src
+		-> pub_calibration.cpp		: c++ file, subscribed to /wheel_states topic, calculate angular velocities of wheels calibrated, publish on /calibration_msg,
+						  (dynamic reconfigure function that modify robot parameters -> uncomment to use)
+		-> pub_odometry.cpp		: c++ file, subscribed to /cmd_vel topic, calculate odometry, perform TF, publish on /odom a geometry_msgs/TwistStamped message,
+						  dynamic reconfigure function that modify odometry calculation method (Euler/Runge Kutta), service ResetOdometryToPose (described below)
+		-> pub_speedcontroller.cpp	: c++ file, subscribed to /calibration_msg and /cmd_vel, calculate RPM of the wheels, publish on /wheels_rpm
+		-> pub_velocity.cpp		: c++ file, subscribed to /calibration_msg topic, calculate velocities (Vx, Vy, omega(the angular one)), publish on cmd_vel topic
+	-> srv
+		-> ResetOdometryToPose.srv 	: service that modify the odometry pose to a given pose by command line
+	-> msg
+		-> CalibrationMessage.msg	: custom message used for calibration purposal
+		-> MessageOdometry.msg		: custom message used for odometry calculation proposal
+		-> MessageVelocity.msg		: custom message used for velocity calculation proposal
+		-> WheelsRPM.msg		: custom message used for publishing RPM of the wheels
+	-> launch
+		-> robot.launch			: launch file that start all the nodes, open rviz configured yet and open also rqt_reconfigure (to change odometry calculation method)
+	-> cfg
+		-> fix_parameters.cfg		: config file used for calibration (dynamic reconfigure)
+		-> method.cfg			: config file used for odometry calculation method (dynamic reconfigure)
+
+
+-name and meaning of the ROS parameters
+	->initialPoseX, initialPoseY, initialPoseTheta consist of the initial pose of the robot (X, Y, Theta)
+	->robotDimensionR	: wheel radius
+	->robotDimensionL	: wheel position along x
+	->robotDimensionW	: wheel position along y
+	->gearRatio		: gear ratio
+	->cpr			: encoders resolution
+
+-structure of the TF tree
+	-> world -> odom -> base_link (world is the higher)
+
+- structure of our custom messages
+	-> CalibrationMessage.msg
+		Header header
+		float64 u0
+		float64 u1
+		float64 u2
+		float64 u3
+		/* Not implemented in the final version. We used them (with dynamic reconfigure) to calibrate robot parameters.
+		float64 W
+		float64 L
+		float64 R
+		float64 GEAR_RATEO
+		float64 CPR
+		*/
+		
+	-> MessageOdometry.msg
+		geometry_msgs/TwistStamped cmd_vel
+		
+	-> MessageVelocity.msg
+		nav_msgs/Odometry odom
+		
+	-> WheelsRPM.msg
+		Header header
+		float64 rpm_fl
+		float64 rpm_fr
+		float64 rpm_rl
+		float64 rpm_rr
+
+-description of how to start/use the nodes
+	-> "roscore"
+	-> "roslaunch robo1 robot.launch"
+		-> all the nodes, rviz and config window of robot parameters and odometry calculation method will start
+		-> red arrow is odometry, white one is pose from OptiTrack
+		-> ready to start the rosbag play command
+
+	-> to use the Odometry Pose Reset service use the command: "rosservice call /reset "new_x: <newX> new_y: <newY> new_theta: <newTheta>""
+	
+
+-info we think are important/intresting
+	-> we calibrated the robot parameters manually thanks to dynamic reconfigure. The procedure consist of running the bags and 
+		checking how good it follows the OptiTrack pose until we get acceptable result. Launch file contains the right values,
+		so during the start-up it is all calibrated yet
+	-> we obtained formulas starting from the raccomended book : "Modern robotics: Mechanics, Planning, and Control" by Kevin M. Lynch and Frank C. Park
+	-> is_first (in pub_odometry.cpp) flag is used to ignore the first message because to compute the odometry we need at least two message to calculate delta_ts
+		(delta_ts = difference of time between actual and previous message)
+	-> in the archive is possible to open the rqt_graph of the entire project (.jpeg file)
